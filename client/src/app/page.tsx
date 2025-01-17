@@ -1,6 +1,7 @@
 "use client";
 
 import Image from 'next/image';
+import { FaEthereum, FaGavel } from 'react-icons/fa';
 import PokemonCards from "@/data/pokemon_cards.json";
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -94,10 +95,20 @@ export default function Home() {
                   className="rounded-md"
                 />
               </div>
-            <DialogFooter className="flex justify-start mx-auto">
-              <Button>Quick Buy</Button>
-              <Button variant="secondary">Auction</Button>
-            </DialogFooter>
+              <DialogFooter className="flex mx-auto">
+                <Button variant="secondary" className="flex items-center mx-4">
+                  <FaEthereum />
+                  <span>
+                    <span className="font-extrabold mr-2">0.15</span>
+                    <span className="font-semibold"> Quick Buy</span>
+                  </span>
+                </Button>
+
+                <Button variant="secondary" className="flex items-center mx-4">
+                  <FaGavel /> {/* Gavel (auction) icon */}
+                  <span className='font-semibold'>Place Bid</span>
+                </Button>
+              </DialogFooter>
           </DialogContent>
           <DialogClose asChild>
             <button className="absolute top-2 right-2 text-xl">&times;</button>
