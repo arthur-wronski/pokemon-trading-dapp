@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useSDK } from "@metamask/sdk-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast"
+import { Separator } from "@/components/ui/separator";
 
 const orbitron = Orbitron({
   subsets: ["latin"],
@@ -74,7 +75,7 @@ const NavBar = () => {
           </Button>
         </div>
       </div>
-      <hr className="border-slate-600" />
+      <Separator className="bg-slate-600"/>
     </div>
   );
 };
