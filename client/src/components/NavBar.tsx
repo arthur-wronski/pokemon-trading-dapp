@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { Orbitron } from "next/font/google";
-import { Wallet, Copy,  } from "lucide-react";
+import { Wallet, Copy, CircleDollarSign, SquareLibrary, Stamp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSDK } from "@metamask/sdk-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast"
 import { Separator } from "@/components/ui/separator";
+import PokeBall from "@/components/PokeBall";
+import { usePathname } from 'next/navigation'
 
 const orbitron = Orbitron({
   subsets: ["latin"],
@@ -17,6 +19,9 @@ const orbitron = Orbitron({
 const NavBar = () => {
   const [account, setAccount] = useState<string>();
   const { sdk } = useSDK();
+
+  const pathname = usePathname()
+  console.log("path name: ", pathname)
 
 
   const connectToMetamask = async () => {
@@ -47,13 +52,31 @@ const NavBar = () => {
   return (
     <div className="sticky top-0 z-50">
       <div className="flex flex-row justify-between bg-zinc-900 text-white w-full h-16 p-4">
-        <div className="flex flex-row space-x-6">
-          <Link href="/">
-            <h1 className={`text-3xl font-bold ${orbitron.className}`}>
-              PokeFi
+        <div className="flex flex-row space-x-6 text-lg my-auto">
+          <Link href="\" className="flex flex-row space-x-1">
+            <CircleDollarSign size={16} className="my-auto"/>
+            <h1 className={`hover:text-zinc-300 ${pathname === '/' ? "underline" : ''}`}>
+              Marketplace
+            </h1>
+          </Link>
+          <Link href="\collection" className="flex flex-row space-x-1">
+            <SquareLibrary size={16} className="my-auto"/>
+            <h1 className={`hover:text-zinc-300 ${pathname === '/collection' ? "underline" : ''}`}>
+              My Cards
+            </h1>
+          </Link>
+          <Link href="\mint" className="flex flex-row space-x-1">
+            <Stamp size={16} className="my-auto"/>
+            <h1 className={`hover:text-zinc-300 ${pathname === '/mint' ? "underline" : ''}`}>
+              Minting
             </h1>
           </Link>
         </div>
+
+        <Link href="/" className="absolute left-1/2 transform -translate-x-1/2 flex flex-row space-x-1">
+          <PokeBall/>
+          <h1 className={`text-3xl font-bold ${orbitron.className}`}>PokeFi</h1>
+        </Link>
 
         <div className="flex flex-row space-x-8 my-auto mr-4">
           <Button
