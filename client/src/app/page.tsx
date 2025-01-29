@@ -31,7 +31,7 @@ interface PokemonCard {
   set: {
     releaseDate: string;
   };
-  [key: string]: any; // Allow additional fields if present
+  [key: string]: unknown;
 }
 
 export default function Home() {
@@ -39,7 +39,7 @@ export default function Home() {
   const [selectedCard, setSelectedCard] = useState<PokemonCard | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const x = 12; // Number of cards to display
+  const x = 24; // Number of cards to display
 
   useEffect(() => {
     if (PokemonCards && PokemonCards.data) {
@@ -50,11 +50,6 @@ export default function Home() {
   const openModal = (card: PokemonCard) => {
     setSelectedCard(card);
     setIsDialogOpen(true);
-  };
-
-  const closeModal = () => {
-    setSelectedCard(null);
-    setIsDialogOpen(false);
   };
 
   return (
