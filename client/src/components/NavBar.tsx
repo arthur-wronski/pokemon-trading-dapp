@@ -21,7 +21,6 @@ const NavBar = () => {
   const { sdk } = useSDK();
 
   const pathname = usePathname()
-  console.log("path name: ", pathname)
 
 
   const connectToMetamask = async () => {
