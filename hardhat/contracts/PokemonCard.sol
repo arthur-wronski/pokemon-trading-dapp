@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract PokemonCard is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
     constructor() ERC721("PokemonCard", "PKMN") Ownable(msg.sender) {}
+    
+    event PokemonCardMinted(address indexed to, uint256 indexed tokenId, string tokenURI);
 
     function mintPokemonCard(
         address to,
@@ -16,6 +18,8 @@ contract PokemonCard is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
         uint256 tokenId = totalSupply();
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, url);
+
+        emit PokemonCardMinted(to, tokenId, url);
     }
 
     // The main function you need - gets all cards owned by an address
