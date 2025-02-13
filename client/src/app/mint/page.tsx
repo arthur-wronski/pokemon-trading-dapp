@@ -12,12 +12,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Biohazard, Bird, Brain, Leaf, MoonStar, Snowflake, Stamp, Waves, Zap } from "lucide-react";
+import { Stamp } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Flame } from "lucide-react";
 import { ethers } from "ethers";
 import PokemonCardABI from "../../../../hardhat/artifacts/contracts/PokemonCard.sol/PokemonCard.json"; 
 import { PokemonMetadata, Rarity } from "@/types/types";
+import { toast } from "@/hooks/use-toast";
+import { pokemonTypes } from "@/data/data";
 
 export default function Mint() {
   const [name, setName] = useState<string>("");
@@ -29,18 +30,6 @@ export default function Mint() {
   const [rarity, setRarity] = useState<Rarity | null>(null);
 
   const contractAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
-
-  const pokemonTypes = [
-    { type: "Fire", colour: "#f59e0b", icon: Flame }, 
-    { type: "Water", colour: "#0ea5e9", icon: Waves }, 
-    { type: "Electric", colour: "#fdd835", icon: Zap }, 
-    { type: "Grass", colour: "#10b981", icon: Leaf }, 
-    { type: "Psychic", colour: "#ed64a6", icon: Brain }, 
-    { type: "Dark", colour: "#585858", icon: MoonStar }, 
-    { type: "Ice", colour: "#94b4c9", icon: Snowflake }, 
-    { type: "Poison", colour: "#a333c8", icon: Biohazard },
-    { type: "Flying", colour: "#a890fc", icon: Bird }
-  ];
 
   const handleToggleType = (type: string, event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -62,7 +51,6 @@ export default function Mint() {
       !rarity ||
       selectedTypes.length === 0
     ) {
-      // alert("Please fill in all fields before minting.");
       return false;
     }
     return true;
@@ -84,7 +72,9 @@ export default function Mint() {
       // Wait for the transaction to be mined
       await tx.wait();
       console.log("Card minted successfully:", tx);
-      alert("Card minted successfully!");
+      toast({
+        description: "Card minted successfully",
+      })
     }catch (err) {
       console.error("Error minting card:", err);
       alert("Minting failed. Please try again.");
