@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast"
 import { Separator } from "@/components/ui/separator";
 import PokeBall from "@/components/PokeBall";
 import { usePathname } from 'next/navigation'
+import { formatAddress } from "@/utils/utils";
 
 const orbitron = Orbitron({
   subsets: ["latin"],
@@ -33,10 +34,6 @@ const NavBar = () => {
     } catch (err) {
       console.warn("Failed to connect to metamask", err);
     }
-  };
-
-  const formatAddress = (address: string | undefined) => {
-    return address ? `${address.slice(0, 6)}...${address.slice(-6)}` : "";
   };
 
   const copyToClipboard = (address: string | undefined) => {
