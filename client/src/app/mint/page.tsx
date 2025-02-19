@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Stamp } from "lucide-react";
+import { LoaderCircle, Stamp } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ethers } from "ethers";
 import PokemonCardABI from "../../../../hardhat/artifacts/contracts/PokemonCard.sol/PokemonCard.json"; 
@@ -28,6 +28,8 @@ export default function Mint() {
   const [attackDamage, setAttackDamage] = useState<number | string>("");
   const [imageURL, setImageURL] = useState<string>("");
   const [rarity, setRarity] = useState<Rarity | null>(null);
+
+  const [mintingLoading, setMintingLoading] = useState<boolean>(false)
 
   const contractAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
 
@@ -102,7 +104,7 @@ export default function Mint() {
     if (!validateForm()) return;
 
     try {
-      
+      setMintingLoading(true)
 
       const ipfsURL = await handleUploadToIPFS({
         name,
@@ -114,10 +116,12 @@ export default function Mint() {
         rarity: rarity as Rarity,
       });
 
-      return await mintCard(ipfsURL)
+      await mintCard(ipfsURL)
+      setMintingLoading(false)
       
     } catch (error) {
       console.error("Error minting card:", error);
+      setMintingLoading(false)
     }
   };
 
@@ -241,7 +245,8 @@ export default function Mint() {
         </CardContent>
         <CardFooter className="flex justify-center">
           <Button onClick={handleSubmit} disabled={!validateForm()} className="bg-teal-600 w-32 hover:bg-teal-700">
-            <Stamp /> Mint
+            <Stamp /> 
+            {mintingLoading ? <LoaderCircle className="animate-spin"/> : "Mint"}
           </Button>
         </CardFooter>
       </Card>
