@@ -48,7 +48,7 @@ const NavBar = () => {
   return (
     <div className="sticky top-0 z-50">
       <div className="flex flex-row justify-between bg-zinc-900 text-white w-full h-16 p-4">
-        <div className="flex flex-row space-x-6 text-lg my-auto">
+        <div className="flex flex-row space-x-8 text-lg my-auto">
           <Link href="\" className="flex flex-row space-x-1">
             <CircleDollarSign size={16} className="my-auto"/>
             <h1 className={`hover:text-zinc-300 ${pathname === '/' ? "underline" : ''}`}>
