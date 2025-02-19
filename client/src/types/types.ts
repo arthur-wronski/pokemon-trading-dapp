@@ -21,3 +21,13 @@ export type ListedCard = {
     price: number
 };
 
+export type AuctionedCard = {
+    metadata: PokemonMetadata,
+    owner: string,
+    startingPrice: number,
+    highestBid: number,
+    highestBidder: string,
+    endTime: number
+};
+
+export type MarketplaceCard = ListedCard | AuctionedCard

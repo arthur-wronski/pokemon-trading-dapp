@@ -1,11 +1,11 @@
-import { ListedCard } from "@/types/types";
+import { MarketplaceCard } from "@/types/types";
 import { JsonRpcProvider } from "ethers";
 
 export interface MarketplaceStore {
     contractAddress: string,
 
-    listedCards: { [tokenID: number]: ListedCard}, 
-    setListedCards: (listedCards: { [tokenID: number]: ListedCard} ) => void
+    marketplaceCards: { [tokenID: number]: MarketplaceCard}
+    setMarketplaceCards: (marketplaceCards: { [tokenID: number]: MarketplaceCard} ) => void
 }
 
 export interface WalletStore {
