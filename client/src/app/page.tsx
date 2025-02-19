@@ -1,115 +1,80 @@
 "use client";
 
-import Image from 'next/image';
-import { FaEthereum, FaGavel } from 'react-icons/fa';
-import PokemonCards from "@/data/pokemon_cards.json";
-import { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-
-interface PokemonCard {
-  id: string;
-  name: string;
-  supertype: string;
-  subtypes: string[];
-  hp: string;
-  types: string[];
-  evolvesFrom: string;
-  evolvesTo?: string[];
-  rules: string[];
-  attacks: {
-    name: string;
-    cost: string[];
-    convertedEnergyCost: number;
-    damage: string;
-    text: string;
-  }[];
-  images: {
-    large: string;
-    small: string;
-  };
-  set: {
-    releaseDate: string;
-  };
-  [key: string]: unknown;
-}
+import { useMarketplace } from '@/hooks/useMarketplace';
+import CardViewer from '@/components/modals/CardViewer';
+import { PokemonCard } from '@/types/types';
+import React, { useState } from "react";
+import Image from "next/image";
+import useFilterStore from '@/zustand/useFilterStore';
+import FilterBar from '@/components/FilterBar';
 
 export default function Home() {
-  const [displayedCards, setDisplayedCards] = useState<PokemonCard[]>([]);
-  const [selectedCard, setSelectedCard] = useState<PokemonCard | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [selectedCard, setSelectedCard] = useState<{ card: PokemonCard, tokenID: number,} | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const searchName = useFilterStore((state) => state.searchName)
+    const rarity = useFilterStore((state) => state.rarity)
+    const hpRange = useFilterStore((state) => state.hpRange)
+    const selectedType = useFilterStore((state) => state.selectedType)
 
-  const x = 24; // Number of cards to display
+    const { listedCards } = useMarketplace();
 
-  useEffect(() => {
-    if (PokemonCards && PokemonCards.data) {
-      setDisplayedCards(PokemonCards.data.slice(0, x));
+    if (Object.keys(listedCards).length === 0) {
+        return <p className="flex bg-zinc-900 min-h-[92vh] w-full justify-center items-center my-auto font-semibold text-2xl text-zinc-200">No cards are currently listed. Come back later!</p>;
     }
-  }, []);
 
-  const openModal = (card: PokemonCard) => {
-    setSelectedCard(card);
-    setIsDialogOpen(true);
-  };
+    const openModal = (card: PokemonCard, tokenID: number) => {
+        setSelectedCard({ card, tokenID });
+        setIsDialogOpen(true);
+    };
 
-  return (
-    <div className="flex bg-zinc-900 items-center justify-center min-h-[92vh] p-10">
-      {/* Grid Container */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
-        {displayedCards.map((card, index) => (
-          <div
-            key={index}
-            onClick={() => openModal(card)}
-            className="cursor-pointer transition-transform transform hover:scale-110 duration-300"
-          >
-            <div className="w-[250px] h-[350px] relative">
-              <Image
-                src={card.images.large}
-                alt={card.name}
-                layout="fill"
-                objectFit="cover"
-                className="rounded-md"
-              />
+    const filteredCards = Object.keys(listedCards).filter((tokenID) => {
+        const card = listedCards[Number(tokenID)].metadata;
+        const matchesName = card.name.toLowerCase().includes(searchName.toLowerCase());
+        const matchesRarity = rarity != "All" ? card.rarity === rarity : true;
+        const matchesHp = (!hpRange.min || card.hp >= Number(hpRange.min)) && (!hpRange.max || card.hp <= Number(hpRange.max));
+        const matchesType = selectedType != "All"  ? card.types.includes(selectedType) : true;
+
+        return matchesName && matchesRarity && matchesHp && matchesType;
+    });
+
+    if (filteredCards.length === 0){
+        return (
+            <div className="flex flex-col bg-zinc-900 items-center min-h-[92vh]">
+                <FilterBar/>
+                <p className="flex bg-zinc-900 w-full justify-center items-center my-auto font-semibold text-2xl text-zinc-200">No NFTs match your current filter criteria. Try adjusting your search </p>;
             </div>
-            <h3 className="mt-6 text-xl text-white font-semibold text-center">{card.name}</h3>
-          </div>
-        ))}
-      </div>
+        )
+    }
 
-      {selectedCard && (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className='flex flex-col bg-transparent border-none w-full'>
-            <DialogTitle className="text-2xl">{selectedCard.name}</DialogTitle>
-              <div className="w-[350px] h-[490px] relative mb-4 mx-auto">
-                <Image
-                  src={selectedCard.images.large}
-                  alt={selectedCard.name}
-                  width={350} 
-                  height={490}
-                  objectFit="cover"
-                  className="rounded-md"
-                />
-              </div>
-              <DialogFooter className="flex mx-auto">
-                <Button variant="secondary" className="flex items-center mx-4">
-                  <FaEthereum />
-                  <span>
-                    <span className="font-extrabold mr-2">0.15</span>
-                    <span className="font-semibold"> Quick Buy</span>
-                  </span>
-                </Button>
+    return (
+        <div className="flex flex-col bg-zinc-900 items-center min-h-[92vh]">
+            <FilterBar/>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
+                {filteredCards.map((tokenID) => {
+                    const card = listedCards[Number(tokenID)];
+                    return (
+                        <div
+                            key={tokenID}
+                            onClick={() => openModal(card, Number(tokenID))}
+                            className="cursor-pointer transition-transform transform hover:scale-110 duration-300"
+                        >
+                            <div className="w-[250px] h-[350px] relative">
+                                <Image
+                                    src={card.metadata.imageURL}
+                                    alt={card.metadata.name}
+                                    fill
+                                    objectFit="cover"
+                                    className="rounded-md"
+                                />
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
 
-                <Button variant="secondary" className="flex items-center mx-4">
-                  <FaGavel /> {/* Gavel (auction) icon */}
-                  <span className='font-semibold'>Place Bid</span>
-                </Button>
-              </DialogFooter>
-          </DialogContent>
-          <DialogClose asChild>
-            <button className="absolute top-2 right-2 text-xl">&times;</button>
-          </DialogClose>
-        </Dialog>
-      )}
-    </div>
-  );
+            {selectedCard && (
+                <CardViewer selectedCard={selectedCard} open={isDialogOpen} setIsOpen={setIsDialogOpen}/>
+            )}
+        </div>
+    )
 }
