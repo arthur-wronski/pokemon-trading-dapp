@@ -1,57 +1,26 @@
 import { useState, useEffect, useRef } from 'react';
 import { ethers } from 'ethers';
 import PokemonMarketplaceABI from "../../../hardhat/artifacts/contracts/PokemonMarketplace.sol/PokemonMarketplace.json";
-import { ListedCard, PokemonCard, PokemonMetadata } from '@/types/types';
 import { useNFTContract } from '@/hooks/useNFTContract';
 import { toast } from '@/hooks/use-toast';
 import useMarketplaceStore from '@/zustand/useMarketplaceStore';
 import useWalletStore from '@/zustand/useWalletStore';
-import ListingDetails from '@/components/tabs/ListingDetails';
-
-interface ListingInfo {
-    seller: string;
-    price: bigint;
-    isActive: boolean;
-}
-
-interface AuctionInfo {
-    seller: string;
-    startingPrice: bigint;
-    highestBid: bigint;
-    highestBidder: string;
-    endTime: bigint;
-    isActive: boolean;
-}
-
-interface MarketplaceCard {
-    tokenId: number;
-    metadata: PokemonMetadata;
-    listing?: ListingInfo;
-    auction?: AuctionInfo;
-}
 
 export const useMarketplace = () => {
     const contractAddress = useMarketplaceStore((state) => state.contractAddress);
     const provider = useWalletStore((state) => state.provider);
 
-    const listedCards = useMarketplaceStore((state) => state.listedCards)
-    const setListedCards = useMarketplaceStore((state) => state.setListedCards)
+    const marketplaceCards = useMarketplaceStore((state) => state.marketplaceCards)
+    const setMarketplaceCards = useMarketplaceStore((state) => state.setMarketplaceCards)
 
-    const [auctionedCards, setAuctionedCards] = useState<MarketplaceCard[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const contractRef = useRef<ethers.Contract | null>(null);
-
-    // Use ref to store approveToken function
-    const approveTokenRef = useRef<any>(null);
 
     const { approveToken, fetchMetadatas, getTokenURIs } = useNFTContract()
 
     // Initialize contract
     useEffect(() => {
-        // Store approveToken in the ref once when the component mounts
-        approveTokenRef.current = approveToken;
-
         const initializeContract = async () => {
             if (!provider || !contractAddress) return;
 
@@ -118,55 +87,45 @@ export const useMarketplace = () => {
 
             // Fetch all listed and auctioned token IDs
             const listedTokenIds = await contractRef.current.getAllListedTokens();
-            console.log(listedTokenIds)
-            const tokenURIs = await getTokenURIs(listedTokenIds)
+            const listedTokenURIs = await getTokenURIs(listedTokenIds)
             const listedCardsMetadata = await fetchMetadatas(
-                tokenURIs
+                listedTokenURIs
             );
-            const listingsDetails = await contractRef.current.getListingsDetails([0]);
-            console.log(" listing details: ", listingsDetails[0])
-            console.log(" listing details: ", listingsDetails[1])
+            const listingsDetails = await contractRef.current.getListingsDetails(Array.from(listedTokenIds));
 
-
-            const cardsDict: {[tokenID: number]: ListedCard} = {};
             listedTokenIds.forEach((tokenId: bigint, index: number) => {
                 if (listedCardsMetadata[index]) {
-                    cardsDict[Number(tokenId)] = {
+                    marketplaceCards[Number(tokenId)] = {
                         metadata: listedCardsMetadata[index],
                         owner: listingsDetails[0][index],
-                        price: listingsDetails[1][index],
+                        price: Number(listingsDetails[1][index]),
                     }
                 }
             });
-            // console.log(cardsDict)
-            // const auctionedTokenIds = await contractRef.current.getAllAuctionedTokens();
 
-            // Fetch listings details
-            // const listingsDetails = await contractRef.current.getListingsDetails(listedTokenIds);
+            const auctionedTokenIds = await contractRef.current.getAllAuctionedTokens();
+            const auctionTokenURIs = await getTokenURIs(auctionedTokenIds)
+            const auctionCardsMetadata = await fetchMetadatas(
+                auctionTokenURIs
+            );
+            const auctionsDetails = await contractRef.current.getAuctionsDetails(Array.from(auctionedTokenIds));
 
-            // Fetch auctions details
-            // const auctionsDetails = await contractRef.current.getAuctionsDetails(auctionedTokenIds);
+            auctionedTokenIds.forEach((tokenId: bigint, index: number) => {
+                if (auctionCardsMetadata[index]) {
+                    marketplaceCards[Number(tokenId)] = {
+                        metadata: auctionCardsMetadata[index],
+                        owner: auctionsDetails[0][index],
+                        startingPrice: Number(auctionsDetails[1][index]),
+                        highestBid: Number(auctionsDetails[2][index]),
+                        highestBidder: auctionsDetails[3][index],
+                        endTime: auctionsDetails[4][index]
+                    }
+                }
+            });
 
-            // const fetchedAuctionedCards = await Promise.all(
-            //     auctionedTokenIds.map(async (tokenId: bigint, index: number) => {
-            //         const metadata = await fetchMetadata(tokenId);
-            //         console.log(metadata)
-            //         return {
-            //             tokenId: Number(tokenId),
-            //             metadata,
-            //             auction: {
-            //                 seller: auctionsDetails[0][index],
-            //                 startingPrice: auctionsDetails[1][index],
-            //                 highestBid: auctionsDetails[2][index],
-            //                 highestBidder: auctionsDetails[3][index],
-            //                 isActive: auctionsDetails[4][index]
-            //             }
-            //         };
-            //     })
-            // );
+            console.log("marketplace cards: ", marketplaceCards)
 
-            setListedCards(cardsDict);
-            // setAuctionedCards(fetchedAuctionedCards);
+            setMarketplaceCards(marketplaceCards);
         } catch (err) {
             setError('Failed to fetch marketplace state');
             console.error(err);
@@ -177,10 +136,10 @@ export const useMarketplace = () => {
 
     // Marketplace Actions
     const listCard = async (tokenId: number, price: bigint) => {
-        if (!contractRef.current || !approveTokenRef.current) return;
+        if (!contractRef.current) return;
         try {
             // Use approveTokenRef instead of direct function call
-            await approveTokenRef.current(tokenId, contractAddress);
+            await approveToken(tokenId, contractAddress);
 
             const tx = await contractRef.current.listCard(tokenId, price);
             await tx.wait();
@@ -221,10 +180,10 @@ export const useMarketplace = () => {
         }
     };
 
-    const startAuction = async (tokenId: number, startingPrice: bigint) => {
+    const startAuction = async (tokenId: number, startingPrice: bigint, duration: bigint) => {
         if (!contractRef.current) return;
         try {
-            const tx = await contractRef.current.startAuction(tokenId, startingPrice);
+            const tx = await contractRef.current.startAuction(tokenId, startingPrice, duration);
             await tx.wait();
             await fetchMarketplaceState();
         } catch (err) {
@@ -269,17 +228,8 @@ export const useMarketplace = () => {
         }
     };
 
-    useEffect(() => {
-        return () => {
-            if (contractRef.current) {
-                contractRef.current.removeAllListeners();
-            }
-        };
-    }, []);
-
     return {
-        listedCards,
-        auctionedCards,
+        marketplaceCards,
         loading,
         error,
         actions: {

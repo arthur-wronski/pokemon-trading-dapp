@@ -15,14 +15,17 @@ import {
 } from "@/components/ui/select"
 import { useMarketplace } from "@/hooks/useMarketplace";
 import useWalletStore from "@/zustand/useWalletStore";
+import { AuctionedCard, ListedCard } from "@/types/types";
+import { X, Gavel } from "lucide-react";
 
 const ListingDetails: React.FC<{ tokenID: number }> = ({ tokenID }) => {
     const [listingPrice, setListingPrice] = useState<number>(1)
-    const { listedCards, actions } = useMarketplace()
+    const { marketplaceCards, actions } = useMarketplace()
     const userAddress = useWalletStore((state) => state.userAddress)
+    const [bidAmount, setBidAmount] = useState<number>(1)
 
-    // in mins
-    const [auctionDuration, setAuctionDuration] = useState<number>(60)
+    // in seconds
+    const [auctionDuration, setAuctionDuration] = useState<number>(3600)
 
     const handleListing = async () => {
         console.log(`Listing card with tokenID: ${tokenID} at price: ${listingPrice}`);
@@ -31,37 +34,92 @@ const ListingDetails: React.FC<{ tokenID: number }> = ({ tokenID }) => {
         return res
     };
 
-    const handleAuction = () => {
+    const handleAuction = async () => {
         console.log(`Auctioning card with tokenID: ${tokenID} with starting price: ${listingPrice} and duration of ${auctionDuration} minutes`);
+        const res = await actions.startAuction(tokenID, BigInt(listingPrice), BigInt(auctionDuration))
+        console.log(res)
+        return res
     };
 
-    // if card already listed
-    if (Object.keys(listedCards).includes(tokenID.toString())) {
-        return (
-            <div className="flex flex-row justify-center space-x-6 items-center">
-                {userAddress === listedCards[tokenID].owner.toLowerCase() ? 
-                    <>
+    // if card already listed or auctioned
+    if (Object.keys(marketplaceCards).includes(tokenID.toString())) {
+        if ('price' in marketplaceCards[tokenID]) {
+            const listedCard = marketplaceCards[tokenID] as ListedCard; 
+            return (
+                <div className="flex flex-row justify-center space-x-6 items-center">
+                    {userAddress === listedCard.owner.toLowerCase() ? 
+                        <>
+                            <Button 
+                                className="bg-red-500 hover:bg-red-600"
+                                onClick={() => actions.cancelListing(tokenID)}
+                            >
+                                <X/>
+                                Cancel Listing
+                            </Button>
+                            <p className="text-zinc-200 font-bold">
+                                Listed for {listedCard.price} ETH
+                            </p>
+                        </>
+                        :
                         <Button 
-                            className="bg-red-500 hover:bg-red-600"
-                            onClick={() => actions.cancelListing(tokenID)}
-                        >
-                            Cancel Listing
-                        </Button>
-                        <p className="text-zinc-200 font-bold">
-                            Listed for {listedCards[tokenID].price} ETH
-                        </p>
-                    </>
-                    :
-                    <Button 
                             className="bg-teal-600 hover:bg-teal-700"
-                            onClick={() => actions.buyCard(tokenID, BigInt(listedCards[tokenID].price))}
+                            onClick={() => actions.buyCard(tokenID, BigInt(listedCard.price))}
                         >
                             <FaEthereum/>
-                            Buy for {listedCards[tokenID].price} ETH
-                    </Button>
-                }
-            </div>
-        );
+                            Buy for {listedCard.price} ETH
+                        </Button>
+                    }
+                </div>
+            );
+        }
+        else{
+            const auctionedCard = marketplaceCards[tokenID] as AuctionedCard; 
+            console.log("Auctioned card: ", auctionedCard)
+            return (
+                <div className="flex flex-row justify-center space-x-6 items-center">
+                    {
+                        auctionedCard.highestBid === 0 ? 
+                            <p className="text-zinc-200 font-bold">
+                                Starting price: {auctionedCard.startingPrice} ETH
+                            </p>
+                            :
+                            <p className="text-zinc-200 font-bold">
+                                Highest bid: {auctionedCard.highestBid} ETH
+                            </p>
+                    }
+                    {userAddress === auctionedCard.owner.toLowerCase() ? 
+                        (auctionedCard.highestBid === 0 ? 
+                            <Button 
+                                className="bg-red-500 hover:bg-red-600"
+                                onClick={() => actions.cancelListing(tokenID)}
+                            >
+                                <X/>
+                                Cancel Auction
+                            </Button>
+                            :
+                            <Button 
+                                className="bg-teal-600 hover:bg-teal-700"
+                                onClick={() => actions.finalizeAuction(tokenID)}
+                            >
+                                <Gavel/>
+                                Finalise Auction
+                            </Button>
+                        )
+                        :
+                        <>
+                        <Input className="text-zinc-400 bg-zinc-800 border-zinc-700 w-48" placeholder="0" value={bidAmount} onChange={(e) => setBidAmount(Number(e.target.value))}></Input>
+                            <Button 
+                                className="bg-teal-600 hover:bg-teal-700"
+                                onClick={() => actions.placeBid(tokenID, BigInt(bidAmount))}
+                            >
+                                <FaEthereum/>
+                                Bid {bidAmount} ETH
+                            </Button>
+                        </>
+                    }
+                </div>
+            );
+        }
     }
 
     return (
@@ -98,10 +156,10 @@ const ListingDetails: React.FC<{ tokenID: number }> = ({ tokenID }) => {
                         <SelectContent className="bg-zinc-800 border-zinc-700 text-zinc-400">
                             <SelectGroup>
                                 <SelectLabel>Duration</SelectLabel>
-                                <SelectItem value={"60"}>1 hour</SelectItem>
-                                <SelectItem value="480">8 hours</SelectItem>
-                                <SelectItem value="1440">1 day</SelectItem>
-                                <SelectItem value="10080">1 week</SelectItem>
+                                <SelectItem value={"3600"}>1 hour</SelectItem>
+                                <SelectItem value="28800">8 hours</SelectItem>
+                                <SelectItem value="86400">1 day</SelectItem>
+                                <SelectItem value="604800">1 week</SelectItem>
                             </SelectGroup>
                         </SelectContent>
                     </Select>

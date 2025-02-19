@@ -16,9 +16,13 @@ export default function Home() {
     const hpRange = useFilterStore((state) => state.hpRange)
     const selectedType = useFilterStore((state) => state.selectedType)
 
-    const { listedCards } = useMarketplace();
+    const { marketplaceCards, loading } = useMarketplace();
 
-    if (Object.keys(listedCards).length === 0) {
+    if (loading) {
+        return <p className="flex bg-zinc-900 min-h-[92vh] w-full justify-center items-center my-auto font-semibold text-2xl text-zinc-200">Loading the marketplace...</p>;
+    }
+
+    if (Object.keys(marketplaceCards).length === 0) {
         return <p className="flex bg-zinc-900 min-h-[92vh] w-full justify-center items-center my-auto font-semibold text-2xl text-zinc-200">No cards are currently listed. Come back later!</p>;
     }
 
@@ -27,8 +31,8 @@ export default function Home() {
         setIsDialogOpen(true);
     };
 
-    const filteredCards = Object.keys(listedCards).filter((tokenID) => {
-        const card = listedCards[Number(tokenID)].metadata;
+    const filteredCards = Object.keys(marketplaceCards).filter((tokenID) => {
+        const card = marketplaceCards[Number(tokenID)].metadata;
         const matchesName = card.name.toLowerCase().includes(searchName.toLowerCase());
         const matchesRarity = rarity != "All" ? card.rarity === rarity : true;
         const matchesHp = (!hpRange.min || card.hp >= Number(hpRange.min)) && (!hpRange.max || card.hp <= Number(hpRange.max));
@@ -51,7 +55,7 @@ export default function Home() {
             <FilterBar/>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
                 {filteredCards.map((tokenID) => {
-                    const card = listedCards[Number(tokenID)];
+                    const card = marketplaceCards[Number(tokenID)];
                     return (
                         <div
                             key={tokenID}
