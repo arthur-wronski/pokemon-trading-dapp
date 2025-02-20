@@ -3,11 +3,15 @@
 import React from "react";
 import { useNFTContract } from "@/hooks/useNFTContract";
 import CardGrid from "@/components/CardGrid";
+import useUserStore from "@/zustand/useUserStore";
 
 const CollectionPage = () => {
-    const { cards, loading } = useNFTContract()
+    const { loading } = useNFTContract()
+
+    const myCards = useUserStore((state) => state.myCards)
+    
     return (
-        <CardGrid cards={cards} loading={loading}/>
+        <CardGrid cards={myCards} loading={loading}/>
     );
 };
 
