@@ -1,5 +1,5 @@
-import { MarketplaceCard } from "@/types/types";
-import { JsonRpcProvider } from "ethers";
+import { MarketplaceCard, PokemonCard } from "@/types/types";
+import { BrowserProvider } from "ethers";
 
 export interface MarketplaceStore {
     contractAddress: string,
@@ -8,9 +8,16 @@ export interface MarketplaceStore {
     setMarketplaceCards: (marketplaceCards: { [tokenID: number]: MarketplaceCard} ) => void
 }
 
-export interface WalletStore {
-    provider: JsonRpcProvider,
-    userAddress: string
+export interface UserStore {
+    provider: BrowserProvider | null,
+    setProvider: (provider: BrowserProvider ) => void
+
+    userAddress: string | null
+    setUserAddress: (userAddress: string ) => void
+
+    myCards: {[tokenID: number]: PokemonCard},
+    setMyCards: (myCards: {[tokenID: number]: PokemonCard} ) => void
+    
 }
 
 type Range = {
