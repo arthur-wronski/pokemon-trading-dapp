@@ -4,9 +4,12 @@ import React, { useState } from "react";
 import Image from "next/image";
 import useFilterStore from '@/zustand/useFilterStore';
 import FilterBar from '@/components/FilterBar';
+import useUserStore from '@/zustand/useUserStore';
 
 const CardGrid: React.FC<{cards: {[tokenID: number] : PokemonCard | MarketplaceCard}, loading: boolean}> = ({cards, loading}) => {
     const [selectedCard, setSelectedCard] = useState<{ card: PokemonCard, tokenID: number,} | null>(null);
+
+    const userAddress = useUserStore((state) => state.userAddress)
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -14,6 +17,10 @@ const CardGrid: React.FC<{cards: {[tokenID: number] : PokemonCard | MarketplaceC
     const rarity = useFilterStore((state) => state.rarity)
     const hpRange = useFilterStore((state) => state.hpRange)
     const selectedType = useFilterStore((state) => state.selectedType)
+
+    if (!userAddress) {
+        return <p className="flex bg-zinc-900 min-h-[92vh] w-full justify-center items-center my-auto font-semibold text-2xl text-zinc-200">Connect your wallet to get started</p>;
+    }
 
     if (loading) {
         return <p className="flex bg-zinc-900 min-h-[92vh] w-full justify-center items-center my-auto font-semibold text-2xl text-zinc-200">Loading...</p>;

@@ -72,12 +72,12 @@ const NavBar = () => {
               My Cards
             </h1>
           </Link>
-          <Link href="\mint" className="flex flex-row space-x-1">
+          {userAddress && <Link href="\mint" className="flex flex-row space-x-1">
             <Stamp size={16} className="my-auto"/>
             <h1 className={`hover:text-zinc-300 ${pathname === '/mint' ? "underline" : ''}`}>
               Minting
             </h1>
-          </Link>
+          </Link>}
         </div>
 
         <Link href="/" className="absolute left-1/2 transform -translate-x-1/2 flex flex-row space-x-1">
