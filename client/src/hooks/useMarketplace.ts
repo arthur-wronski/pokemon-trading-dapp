@@ -167,7 +167,6 @@ export const useMarketplace = () => {
   const listCard = async (tokenId: number, price: bigint) => {
     if (!contractRef.current) return;
     try {
-      // Use approveTokenRef instead of direct function call
       await approveToken(tokenId, contractAddress);
 
       const tx = await contractRef.current.listCard(tokenId, price);
@@ -216,6 +215,7 @@ export const useMarketplace = () => {
   ) => {
     if (!contractRef.current) return;
     try {
+      await approveToken(tokenId, contractAddress);
       const tx = await contractRef.current.startAuction(
         tokenId,
         startingPrice,
