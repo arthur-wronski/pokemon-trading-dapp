@@ -18,6 +18,11 @@ export const useMarketplace = () => {
     (state) => state.setMarketplaceCards
   );
 
+  const userAddress = useUserStore((state) => state.userAddress)
+  const myCards = useUserStore((state) => state.myCards)
+  const setMyCards = useUserStore((state) => state.setMyCards)
+
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const contractRef = useRef<ethers.Contract | null>(null);
@@ -49,7 +54,7 @@ export const useMarketplace = () => {
     };
 
     initializeContract();
-  }, []);
+  }, [provider]);
 
   const setupEventListeners = () => {
     if (!contractRef.current) return;
@@ -76,26 +81,51 @@ export const useMarketplace = () => {
     contractRef.current.on(
       "CardSold",
       (tokenId: bigint, seller: string, buyer: string, price: bigint) => {
-        fetchMarketplaceState();
+        if (seller.toLowerCase() === userAddress?.toLowerCase()){
+          const myNewCards = myCards
+          delete myNewCards[Number(tokenId)]
+          setMyCards(myNewCards)
+        }
+
+        if (buyer.toLowerCase() === userAddress){
+          setMyCards(
+            {...myCards,
+              [Number(tokenId)]: {metadata: marketplaceCards[Number(tokenId)].metadata, owner: userAddress} 
+            }
+        )
+        }
+
+        const newMarketplaceCards = marketplaceCards
+        delete newMarketplaceCards[Number(tokenId)]
+        setMarketplaceCards(newMarketplaceCards)
       }
     );
 
     contractRef.current.on(
       "AuctionStarted",
-      (
+      async (
         tokenId: bigint,
         seller: string,
         startingPrice: bigint,
         endTime: bigint
       ) => {
-        fetchMarketplaceState();
+        const auctionedCardURI = await getTokenURIs([Number(tokenId)]);
+        const auctionedCardMetadata = await fetchMetadatas(auctionedCardURI) as PokemonMetadata[];
+        setMarketplaceCards(
+            {...marketplaceCards,
+              [Number(tokenId)]: {metadata: auctionedCardMetadata[0], startingPrice: Number(startingPrice), owner: seller, endTime: Number(endTime), highestBid: 0, highestBidder: ""} 
+            }
+        )
       }
     );
 
     contractRef.current.on(
       "AuctionBid",
       (tokenId: bigint, bidder: string, bid: bigint) => {
-        fetchMarketplaceState();
+        setMarketplaceCards(
+          {...marketplaceCards,
+            [Number(tokenId)]: {...marketplaceCards[Number(tokenId)], highestBid: Number(bid), highestBidder: bidder} 
+          })
       }
     );
 
@@ -147,7 +177,7 @@ export const useMarketplace = () => {
             startingPrice: Number(auctionsDetails[1][index]),
             highestBid: Number(auctionsDetails[2][index]),
             highestBidder: auctionsDetails[3][index],
-            endTime: auctionsDetails[4][index],
+            endTime: Number(auctionsDetails[4][index]),
           };
         }
       });
