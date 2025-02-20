@@ -14,14 +14,16 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { useMarketplace } from "@/hooks/useMarketplace";
-import useWalletStore from "@/zustand/useWalletStore";
+import useUserStore from "@/zustand/useUserStore";
 import { AuctionedCard, ListedCard } from "@/types/types";
 import { X, Gavel } from "lucide-react";
+import useMarketplaceStore from "@/zustand/useMarketplaceStore";
 
 const ListingDetails: React.FC<{ tokenID: number }> = ({ tokenID }) => {
     const [listingPrice, setListingPrice] = useState<number>(1)
-    const { marketplaceCards, actions } = useMarketplace()
-    const userAddress = useWalletStore((state) => state.userAddress)
+    const { actions } = useMarketplace()
+    const marketplaceCards = useMarketplaceStore((state) => state.marketplaceCards)
+    const userAddress = useUserStore((state) => state.userAddress)
     const [bidAmount, setBidAmount] = useState<number>(1)
 
     // in seconds
@@ -91,7 +93,7 @@ const ListingDetails: React.FC<{ tokenID: number }> = ({ tokenID }) => {
                         (auctionedCard.highestBid === 0 ? 
                             <Button 
                                 className="bg-red-500 hover:bg-red-600"
-                                onClick={() => actions.cancelListing(tokenID)}
+                                onClick={() => actions.cancelAuction(tokenID)}
                             >
                                 <X/>
                                 Cancel Auction
