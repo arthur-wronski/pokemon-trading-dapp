@@ -11,6 +11,6 @@ export default function Home() {
     const marketplaceCards = useMarketplaceStore((state) => state.marketplaceCards)
     
     return(
-        <CardGrid cards={marketplaceCards} loading={loading} />
+        <CardGrid cards={marketplaceCards} loading={loading} type="Marketplace"/>
     );
 }

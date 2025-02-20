@@ -6,7 +6,7 @@ import useFilterStore from '@/zustand/useFilterStore';
 import FilterBar from '@/components/FilterBar';
 import useUserStore from '@/zustand/useUserStore';
 
-const CardGrid: React.FC<{cards: {[tokenID: number] : PokemonCard | MarketplaceCard}, loading: boolean}> = ({cards, loading}) => {
+const CardGrid: React.FC<{cards: {[tokenID: number] : PokemonCard | MarketplaceCard}, loading: boolean, type: "Collection" | "Marketplace"}> = ({cards, loading, type}) => {
     const [selectedCard, setSelectedCard] = useState<{ card: PokemonCard, tokenID: number,} | null>(null);
 
     const userAddress = useUserStore((state) => state.userAddress)
@@ -27,7 +27,15 @@ const CardGrid: React.FC<{cards: {[tokenID: number] : PokemonCard | MarketplaceC
     }
 
     if (Object.keys(cards).length === 0) {
-        return <p className="flex bg-zinc-900 min-h-[92vh] w-full justify-center items-center my-auto font-semibold text-2xl text-zinc-200">No cards are currently listed. Come back later!</p>;
+        if (type === "Marketplace") {
+            return <p className="flex bg-zinc-900 min-h-[92vh] w-full justify-center items-center my-auto font-semibold text-2xl text-zinc-200">
+                        No cards are currently listed. Come back later!
+                    </p>;
+        }else{
+            return <p className="flex bg-zinc-900 min-h-[92vh] w-full justify-center items-center my-auto font-semibold text-2xl text-zinc-200">
+                        Your collection is empty, browse the marketplace to get one.
+                    </p>;
+        }
     }
 
     const openModal = (card: PokemonCard, tokenID: number) => {

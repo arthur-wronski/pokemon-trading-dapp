@@ -11,7 +11,7 @@ const CollectionPage = () => {
     const myCards = useUserStore((state) => state.myCards)
     
     return (
-        <CardGrid cards={myCards} loading={loading}/>
+        <CardGrid cards={myCards} loading={loading} type="Collection"/>
     );
 };
 
