@@ -21,7 +21,7 @@ const CardViewer: React.FC<CardViewerProps> = ({selectedCard, open, setIsOpen}) 
     const metadata = selectedCard.card.metadata
     return(
         <Dialog open={open} onOpenChange={setIsOpen}>
-            <DialogContent className='flex flex-col bg-zinc-900 border-none min-w-[50%] min-h-[50%] [&>button]:hidden'>
+            <DialogContent className='flex flex-col bg-zinc-900 border-none min-w-[55%] min-h-[50%] [&>button]:hidden'>
                 <DialogTitle className="text-2xl text-center text-zinc-200 font-mono">
                     {metadata.name}
                 </DialogTitle>
