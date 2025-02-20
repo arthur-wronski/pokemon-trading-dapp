@@ -6,7 +6,7 @@ import useUserStore from '@/zustand/useUserStore';
 import { toast } from './use-toast';
 
 export const useNFTContract = () => {
-  const contractAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3"; 
+  const contractAddress = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS as string; 
   const userAddress = useUserStore((state) => state.userAddress)
   const provider = useUserStore((state) => state.provider)
   const pinataGateway = process.env.NEXT_PUBLIC_GATEWAY_URL as string;
