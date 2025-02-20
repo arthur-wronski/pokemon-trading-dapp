@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FaEthereum } from "react-icons/fa";
 import { Input } from "@/components/ui/input";
@@ -25,9 +25,39 @@ const ListingDetails: React.FC<{ tokenID: number }> = ({ tokenID }) => {
     const marketplaceCards = useMarketplaceStore((state) => state.marketplaceCards)
     const userAddress = useUserStore((state) => state.userAddress)
     const [bidAmount, setBidAmount] = useState<number>(1)
+    const [timeLeft, setTimeLeft] = useState<string>("");
 
     // in seconds
     const [auctionDuration, setAuctionDuration] = useState<number>(3600)
+
+    useEffect(() => {
+        const auctionedCard = marketplaceCards[tokenID] as AuctionedCard | undefined;
+        if (!auctionedCard) return;
+
+        // Update the time remaining every second
+        const interval = setInterval(() => {
+            const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+            const timeRemaining = auctionedCard.endTime - currentTime;
+
+            if (timeRemaining > 0) {
+                const days = Math.floor(timeRemaining / (60 * 60 * 24));
+                const hours = Math.floor((timeRemaining % (60 * 60 * 24)) / (60 * 60));
+                const minutes = Math.floor((timeRemaining % (60 * 60)) / 60);
+                const seconds = timeRemaining % 60;
+
+                const timeString = `${days > 0 ? `${days}d ` : ""}${
+                    hours > 0 ? `${hours}h ` : ""
+                }${minutes > 0 ? `${minutes}m ` : ""}${seconds}s`;
+
+                setTimeLeft(timeString);
+            } else {
+                setTimeLeft("Auction Ended");
+                clearInterval(interval);
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, []);
 
     const handleListing = async () => {
         console.log(`Listing card with tokenID: ${tokenID} at price: ${listingPrice}`);
@@ -76,6 +106,7 @@ const ListingDetails: React.FC<{ tokenID: number }> = ({ tokenID }) => {
         }
         else{
             const auctionedCard = marketplaceCards[tokenID] as AuctionedCard; 
+
             console.log("Auctioned card: ", auctionedCard)
             return (
                 <div className="flex flex-row justify-center space-x-6 items-center">
@@ -99,17 +130,24 @@ const ListingDetails: React.FC<{ tokenID: number }> = ({ tokenID }) => {
                                 Cancel Auction
                             </Button>
                             :
-                            <Button 
-                                className="bg-teal-600 hover:bg-teal-700"
-                                onClick={() => actions.finalizeAuction(tokenID)}
-                            >
-                                <Gavel/>
-                                Finalise Auction
-                            </Button>
+                            (timeLeft === "Auction Ended" && (
+                                <Button 
+                                    className="bg-teal-600 hover:bg-teal-700"
+                                    onClick={() => actions.finalizeAuction(tokenID)}
+                                >
+                                    <Gavel/>
+                                    Finalise Auction
+                                </Button>
+                            ))
                         )
                         :
                         <>
-                        <Input className="text-zinc-400 bg-zinc-800 border-zinc-700 w-48" placeholder="0" value={bidAmount} onChange={(e) => setBidAmount(Number(e.target.value))}></Input>
+                            <Input 
+                                className="text-zinc-400 bg-zinc-800 border-zinc-700 w-48" 
+                                placeholder="0" 
+                                value={bidAmount} 
+                                onChange={(e) => setBidAmount(Number(e.target.value))}
+                            />
                             <Button 
                                 className="bg-teal-600 hover:bg-teal-700"
                                 onClick={() => actions.placeBid(tokenID, BigInt(bidAmount))}
@@ -119,6 +157,9 @@ const ListingDetails: React.FC<{ tokenID: number }> = ({ tokenID }) => {
                             </Button>
                         </>
                     }
+                    <p className="text-zinc-200 font-bold">
+                        Time Remaining: {timeLeft}
+                    </p>
                 </div>
             );
         }
