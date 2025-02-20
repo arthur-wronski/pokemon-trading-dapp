@@ -20,18 +20,22 @@ This project combines modern web technologies with blockchain development:
   - Image URL and Rarity
 - Automatic IPFS metadata upload via Pinata
 - Transaction signing prompt for minting
+<img width="1470" alt="Screenshot 2025-02-20 at 16 28 11" src="https://github.com/user-attachments/assets/97be3e54-b16f-455b-b246-a7b5b10d6a16" />
 
 ### Collection Page
 - Display user's owned cards
 - Advanced filtering system (name, rarity, type, HP)
 - Card interaction modal with metadata display
 - Listing and auction management options
+<img width="1470" alt="Screenshot 2025-02-20 at 16 31 00" src="https://github.com/user-attachments/assets/84fab4e5-0b52-49eb-b33e-f7efa6eda958" />
+<img width="1470" alt="Screenshot 2025-02-20 at 16 31 30" src="https://github.com/user-attachments/assets/28cfca02-ebf0-4ca2-920b-ef07523342df" />
 
 ### Marketplace Page
 - Browse all listed cards
 - Comprehensive filtering system
 - Buy/bid functionality
 - Real-time updates for market changes
+<img width="1470" alt="Screenshot 2025-02-20 at 16 31 50" src="https://github.com/user-attachments/assets/07c4f6da-9849-44e6-b9fa-bdc9c040a576" />
 
 ## Prerequisites
 
