@@ -52,22 +52,27 @@ This project combines modern web technologies with blockchain development:
 cd hardhat
 ```
 
-2. Start local Hardhat node:
+2. Install the local dependencies (make sure you have node installed!):
+```bash
+npm install
+```
+
+3. Start local Hardhat node (make sure to copy the private key of the first wallet for later):
 ```bash
 npx hardhat node
 ```
 
-3. In a new terminal, compile contracts:
+4. In a new terminal, compile contracts:
 ```bash
 npx hardhat compile
 ```
 
-4. Deploy contracts:
+5. Deploy contracts:
 ```bash
 npx hardhat run scripts/deploy.js --network localhost
 ```
 
-5. (Optional) Run tests:
+6. (Optional) Run tests on the smart contracts:
 ```bash
 npx hardhat test
 ```
@@ -95,8 +100,8 @@ cd client
 ```env
 PINATA_JWT=your_pinata_jwt
 NEXT_PUBLIC_GATEWAY_URL=your_gateway_url
-NFT_CONTRACT_ADDRESS=deployed_nft_contract_address
-MARKETPLACE_CONTRACT_ADDRESS=deployed_marketplace_address
+NEXT_PUBLIC_NFT_CONTRACT_ADDRESS=deployed_nft_contract_address
+NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS=deployed_marketplace_address
 ```
 
 For Pinata credentials, refer to the [Pinata Documentation](https://docs.pinata.cloud/) to create an account and obtain your JWT.
