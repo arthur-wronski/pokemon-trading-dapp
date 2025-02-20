@@ -14,11 +14,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoaderCircle, Stamp } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ethers } from "ethers";
-import PokemonCardABI from "../../../../hardhat/artifacts/contracts/PokemonCard.sol/PokemonCard.json"; 
-import { PokemonMetadata, Rarity } from "@/types/types";
-import { toast } from "@/hooks/use-toast";
 import { pokemonTypes } from "@/data/data";
+import { useNFTContract } from "@/hooks/useNFTContract";
+import { Rarity } from "@/types/types";
 
 export default function Mint() {
   const [name, setName] = useState<string>("");
@@ -31,7 +29,7 @@ export default function Mint() {
 
   const [mintingLoading, setMintingLoading] = useState<boolean>(false)
 
-  const contractAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
+  const { mintCard } = useNFTContract()
 
   const handleToggleType = (type: string, event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -58,55 +56,13 @@ export default function Mint() {
     return true;
   };
 
-  const mintCard = async (ipfsURL: string) => {
-    try{
-      const provider = new ethers.JsonRpcProvider();
-      const signer = await provider.getSigner();
-
-      // Create a contract instance
-      const pokemonCardContract = new ethers.Contract(contractAddress, PokemonCardABI.abi, signer);
-
-      const wallet = new ethers.Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", provider); 
-
-      // Call the contract's minting function
-      const tx = await pokemonCardContract.mintPokemonCard(wallet.address, ipfsURL);
-
-      // Wait for the transaction to be mined
-      await tx.wait();
-      console.log("Card minted successfully:", tx);
-      toast({
-        description: "Card minted successfully",
-      })
-    }catch (err) {
-      console.error("Error minting card:", err);
-      alert("Minting failed. Please try again.");
-    }
-  }
-
-  const handleUploadToIPFS = async (metadata: PokemonMetadata) => {
-    try {
-      const response = await fetch("/api/upload-ipfs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(metadata),
-      });
-
-      return await response.json()
-      
-    } catch (error) {
-      console.error("Error uploading metadata to IPFS:", error);
-    }
-  }
-
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
     try {
       setMintingLoading(true)
 
-      const ipfsURL = await handleUploadToIPFS({
+      await mintCard({
         name,
         hp: hp as number,
         types: selectedTypes,
@@ -114,9 +70,7 @@ export default function Mint() {
         attackDamage: attackDamage as number,
         imageURL,
         rarity: rarity as Rarity,
-      });
-
-      await mintCard(ipfsURL)
+      })
       setMintingLoading(false)
       
     } catch (error) {
