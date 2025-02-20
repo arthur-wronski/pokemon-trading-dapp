@@ -32,7 +32,7 @@ const NavBar = () => {
     try {
       const accounts = await sdk?.connect() as string[];
       if (accounts.length > 0) {
-        setUserAddress(accounts[0]);
+        setUserAddress(accounts[0].toLowerCase());
 
         const provider = new ethers.BrowserProvider(window.ethereum); 
         console.log(provider)
