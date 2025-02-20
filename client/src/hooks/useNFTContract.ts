@@ -2,26 +2,23 @@ import { useState, useEffect, useRef } from 'react';
 import { ethers } from 'ethers';
 import PokemonCardABI from "../../../hardhat/artifacts/contracts/PokemonCard.sol/PokemonCard.json"; 
 import { PokemonCard, PokemonMetadata } from '@/types/types';
-import useWalletStore from '@/zustand/useWalletStore';
+import useUserStore from '@/zustand/useUserStore';
+import { toast } from './use-toast';
 
 export const useNFTContract = () => {
   const contractAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3"; 
-  const userAddress = useWalletStore((state) => state.userAddress)
-  const provider = useWalletStore((state) => state.provider)
+  const userAddress = useUserStore((state) => state.userAddress)
+  const provider = useUserStore((state) => state.provider)
   const pinataGateway = process.env.NEXT_PUBLIC_GATEWAY_URL as string;
-  const [cards, setCards] = useState<{[tokenID: number]: PokemonCard}>({});
+  const myCards = useUserStore((state) => state.myCards)
+  const setMyCards = useUserStore((state) => state.setMyCards)
   const [loading, setLoading] = useState(true);
   const contractRef = useRef<ethers.Contract | null>(null);
-
-  const providerRef = useRef(provider);
-  const contractAddressRef = useRef(contractAddress);
-  const userAddressRef = useRef(userAddress);
-  const pinataGatewayRef = useRef(pinataGateway);
 
   const fetchMetadatas = async(tokenURIs: string[]) => {
     const metadataPromises = tokenURIs.map(async (uri: string) => {
       try {
-        const ipfsURL = uri.replace('ipfs://', pinataGatewayRef.current);
+        const ipfsURL = uri.replace('ipfs://', pinataGateway);
         const response = await fetch(ipfsURL);
         const metadata = await response.json();
         return metadata as PokemonMetadata;
@@ -48,37 +45,29 @@ export const useNFTContract = () => {
   }
 
   useEffect(() => {
-    providerRef.current = provider;
-    contractAddressRef.current = contractAddress;
-    userAddressRef.current = userAddress;
-    pinataGatewayRef.current = pinataGateway;
-  }, [provider, contractAddress, userAddress, pinataGateway]);
-
-  useEffect(() => {
     const initializeContractAndFetch = async () => {
-      if (!providerRef.current || !userAddressRef.current || !contractAddressRef.current) return;
+      if (!provider || !userAddress || !contractAddress) return;
 
       try {
-        const signer = await providerRef.current.getSigner();
+        const signer = await provider.getSigner();
         contractRef.current = new ethers.Contract(
-          contractAddressRef.current, 
+          contractAddress, 
           PokemonCardABI.abi, 
           signer
         );
 
         contractRef.current.on("PokemonCardMinted", async (to: string, tokenId: bigint, tokenURI: string) => {
-          console.log("I am listening bro: ", to, tokenId, tokenURI)
-          if (to.toLowerCase() === userAddressRef.current.toLowerCase()) {
+          if (to.toLowerCase() === userAddress.toLowerCase()) {
             try {
-              const ipfsURL = tokenURI.replace('ipfs://', pinataGatewayRef.current);
+              console.log('minting event listened')
+              const ipfsURL = tokenURI.replace('ipfs://', pinataGateway);
               const response = await fetch(ipfsURL);
               const metadata = await response.json() as PokemonMetadata;
               
-              setCards(prevCards => ({
-                ...prevCards,
+              setMyCards({
+                ...myCards,
                 [Number(tokenId)]: {metadata, owner: to}
-              }));
-              console.log("listened metadata: ", metadata)
+              });
             } catch (error) {
               console.error('Error fetching metadata for new card:', error);
             }
@@ -86,7 +75,7 @@ export const useNFTContract = () => {
         });
 
         // Fetch initial cards
-        const [tokenIds, tokenURIs] = await contractRef.current.getAllCardsOfOwner(userAddressRef.current);
+        const [tokenIds, tokenURIs] = await contractRef.current.getAllCardsOfOwner(userAddress);
 
         const fetchedMetadata = await fetchMetadatas(tokenURIs)
 
@@ -97,7 +86,7 @@ export const useNFTContract = () => {
           }
         });
 
-        setCards(cardsDict);
+        setMyCards(cardsDict);
       } catch (error) {
         console.error('Error fetching owned cards:', error);
       } finally {
@@ -113,7 +102,7 @@ export const useNFTContract = () => {
         contractRef.current.removeAllListeners("PokemonCardMinted");
       }
     };
-  }, []);
+  }, [provider]);
 
   const approveToken = async (tokenId: number, approvedAddress: string) => {
     if (!contractRef.current) return;
@@ -128,5 +117,43 @@ export const useNFTContract = () => {
     }
   };
 
-  return { cards, loading, approveToken, fetchMetadatas, getTokenURIs };
+  const mintCard = async (metadata: PokemonMetadata) => {
+    try {
+      if (!contractRef.current || !provider) return;
+
+      const signer = await provider.getSigner();
+      const walletAddress = await signer.getAddress();
+     
+      const ipfsURL = await handleUploadToIPFS(metadata)
+       
+      const tx = await contractRef.current.mintPokemonCard(walletAddress, ipfsURL);
+
+      await tx.wait();
+      console.log("Card minted successfully:", tx);
+      toast({
+        description: "Card minted successfully",
+      });
+    } catch (err) {
+      console.error("Error minting card:", err);
+    }
+  };
+
+  const handleUploadToIPFS = async (metadata: PokemonMetadata) => {
+    try {
+      const response = await fetch("/api/upload-ipfs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(metadata),
+      });
+
+      return await response.json()
+      
+    } catch (error) {
+      console.error("Error uploading metadata to IPFS:", error);
+    }
+  }
+
+  return { loading, approveToken, fetchMetadatas, getTokenURIs, mintCard };
 };
