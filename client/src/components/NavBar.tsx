@@ -5,12 +5,13 @@ import { Orbitron } from "next/font/google";
 import { Wallet, Copy, CircleDollarSign, SquareLibrary, Stamp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSDK } from "@metamask/sdk-react";
-import { useState } from "react";
 import { toast } from "@/hooks/use-toast"
 import { Separator } from "@/components/ui/separator";
 import PokeBall from "@/components/PokeBall";
 import { usePathname } from 'next/navigation'
 import { formatAddress } from "@/utils/utils";
+import useUserStore from "@/zustand/useUserStore";
+import { ethers } from "ethers";
 
 const orbitron = Orbitron({
   subsets: ["latin"],
@@ -18,7 +19,10 @@ const orbitron = Orbitron({
 });
 
 const NavBar = () => {
-  const [account, setAccount] = useState<string>();
+  const userAddress = useUserStore((state) => state.userAddress)
+  const setUserAddress = useUserStore((state) => state.setUserAddress)
+  const setProvider = useUserStore((state) => state.setProvider)
+
   const { sdk } = useSDK();
 
   const pathname = usePathname()
@@ -26,13 +30,20 @@ const NavBar = () => {
 
   const connectToMetamask = async () => {
     try {
-      const accounts = await sdk?.connect();
-      setAccount(accounts?.[0]);
-      toast({
-        description: "MetaMask connection successful",
-      })
+      const accounts = await sdk?.connect() as string[];
+      if (accounts.length > 0) {
+        setUserAddress(accounts[0]);
+
+        const provider = new ethers.BrowserProvider(window.ethereum); 
+        console.log(provider)
+        setProvider(provider); 
+
+        toast({
+          description: "MetaMask connection successful",
+        });
+      }
     } catch (err) {
-      console.warn("Failed to connect to metamask", err);
+      console.warn("Failed to connect to MetaMask", err);
     }
   };
 
@@ -77,13 +88,13 @@ const NavBar = () => {
         <div className="flex flex-row space-x-8 my-auto mr-4">
           <Button
             variant="outline"
-            onClick={account ? () => copyToClipboard(account) : connectToMetamask}
-            className={`${account ? "bg-[#c084fc] hover:bg-[#ad5cfe]" :"bg-[#1f2937] hover:bg-[#c084fc]"} border-[#c084fc] hover:text-zinc-200`}
+            onClick={userAddress ? () => copyToClipboard(userAddress) : connectToMetamask}
+            className={`${userAddress ? "bg-[#c084fc] hover:bg-[#ad5cfe]" :"bg-[#1f2937] hover:bg-[#c084fc]"} border-[#c084fc] hover:text-zinc-200`}
           >
-            {account ? (
+            {userAddress ? (
               <>
                 <Copy size={18} />
-                <span>{formatAddress(account)}</span>
+                <span>{formatAddress(userAddress)}</span>
               </>
             ) : (
               <>
