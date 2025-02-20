@@ -89,7 +89,7 @@ const ListingDetails: React.FC<{ tokenID: number }> = ({ tokenID }) => {
                                 Cancel Listing
                             </Button>
                             <p className="text-zinc-200 font-bold">
-                                Listed for {listedCard.price} ETH
+                                Listed for {listedCard.price} Wei
                             </p>
                         </>
                         :
@@ -98,7 +98,7 @@ const ListingDetails: React.FC<{ tokenID: number }> = ({ tokenID }) => {
                             onClick={() => actions.buyCard(tokenID, BigInt(listedCard.price))}
                         >
                             <FaEthereum/>
-                            Buy for {listedCard.price} ETH
+                            Buy for {listedCard.price} Wei
                         </Button>
                     }
                 </div>
@@ -113,11 +113,11 @@ const ListingDetails: React.FC<{ tokenID: number }> = ({ tokenID }) => {
                     {
                         auctionedCard.highestBid === 0 ? 
                             <p className="text-zinc-200 font-bold">
-                                Starting price: {auctionedCard.startingPrice} ETH
+                                Starting price: {auctionedCard.startingPrice} Wei
                             </p>
                             :
                             <p className="text-zinc-200 font-bold">
-                                Highest bid: {auctionedCard.highestBid} ETH
+                                Highest bid: {auctionedCard.highestBid} Wei
                             </p>
                     }
                     {userAddress === auctionedCard.owner.toLowerCase() ? 
@@ -153,7 +153,7 @@ const ListingDetails: React.FC<{ tokenID: number }> = ({ tokenID }) => {
                                 onClick={() => actions.placeBid(tokenID, BigInt(bidAmount))}
                             >
                                 <FaEthereum/>
-                                Bid {bidAmount} ETH
+                                Bid {bidAmount} Wei
                             </Button>
                         </>
                     }
