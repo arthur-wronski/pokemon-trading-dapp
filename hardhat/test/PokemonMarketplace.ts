@@ -222,4 +222,93 @@ describe("PokemonMarketplace", function () {
             expect(isActive).to.deep.equal([true, true]);
         });
     });
+
+    describe("Pausable", function () {
+        it("Should allow owner to pause and unpause the contract", async function () {
+            const { marketplace, owner } = await loadFixture(deployMarketplaceFixture);
+            
+            // Pause the contract using owner
+            await marketplace.connect(owner).pause();
+            expect(await marketplace.paused()).to.be.true;
+            
+            // Unpause the contract using owner
+            await marketplace.connect(owner).unpause();
+            expect(await marketplace.paused()).to.be.false;
+        });
+    
+        it("Should prevent actions when paused", async function () {
+            const { marketplace, pokemonCard, seller, buyer, owner } = await loadFixture(deployMarketplaceFixture);
+            const tokenId = 0;
+            const price = toWei(1);
+    
+            // Approve and list the card
+            await pokemonCard.connect(seller).approve(await marketplace.getAddress(), tokenId);
+            await marketplace.connect(seller).listCard(tokenId, price);
+    
+            // Pause the contract using owner instead of seller
+            await marketplace.connect(owner).pause();
+    
+            // Try to buy the card while paused
+            await expect(
+                marketplace.connect(buyer).buyCard(tokenId, { value: price })
+            ).to.be.revertedWithCustomError(marketplace, "EnforcedPause")
+    
+            // Unpause using owner and buy the card
+            await marketplace.connect(owner).unpause();
+            await expect(marketplace.connect(buyer).buyCard(tokenId, { value: price }))
+                .to.emit(marketplace, "CardSold")
+                .withArgs(tokenId, seller.address, buyer.address, price);
+        });
+    });
+
+    describe("Auction Finalizing as Highest Bidder", function () {
+        it("Should allow highest bidder to finalize auction", async function () {
+            const { marketplace, pokemonCard, seller, bidder1 } = await loadFixture(deployMarketplaceFixture);
+            const tokenId = 0;
+            const startingPrice = toWei(1);
+            const bidAmount = toWei(1.5);
+            const duration = 86400;
+
+            // Approve and start auction
+            await pokemonCard.connect(seller).approve(await marketplace.getAddress(), tokenId);
+            await marketplace.connect(seller).startAuction(tokenId, startingPrice, duration);
+
+            // Place a valid bid
+            await marketplace.connect(bidder1).placeBid(tokenId, { value: bidAmount });
+
+            // Fast forward time to end auction
+            await time.increase(duration + 1);
+
+            // Finalize auction by highest bidder
+            await expect(marketplace.connect(bidder1).finalizeAuction(tokenId))
+                .to.emit(marketplace, "AuctionEnded")
+                .withArgs(tokenId, bidder1.address, bidAmount);
+
+            // Check ownership transfer
+            expect(await pokemonCard.ownerOf(tokenId)).to.equal(bidder1.address);
+        });
+
+        it("Should not allow finalization by unauthorized users", async function () {
+            const { marketplace, pokemonCard, seller, bidder1, buyer } = await loadFixture(deployMarketplaceFixture);
+            const tokenId = 0;
+            const startingPrice = toWei(1);
+            const bidAmount = toWei(1.5);
+            const duration = 86400;
+
+            // Approve and start auction
+            await pokemonCard.connect(seller).approve(await marketplace.getAddress(), tokenId);
+            await marketplace.connect(seller).startAuction(tokenId, startingPrice, duration);
+
+            // Place a valid bid
+            await marketplace.connect(bidder1).placeBid(tokenId, { value: bidAmount });
+
+            // Fast forward time to end auction
+            await time.increase(duration + 1);
+
+            // Try to finalize auction by someone who is not the highest bidder or seller
+            await expect(marketplace.connect(buyer).finalizeAuction(tokenId))
+                .to.be.revertedWith("Not authorized to finalize");
+        });
+    });
+
 });

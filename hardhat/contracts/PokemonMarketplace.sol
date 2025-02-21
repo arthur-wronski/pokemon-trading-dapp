@@ -3,8 +3,11 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract PokemonMarketplace is ReentrancyGuard {
+
+contract PokemonMarketplace is ReentrancyGuard, Pausable, Ownable {
     IERC721 public immutable pokemonContract;
     
     struct Listing {
@@ -43,7 +46,7 @@ contract PokemonMarketplace is ReentrancyGuard {
     event AuctionEnded(uint256 indexed tokenId, address indexed winner, uint256 winningBid);
     event AuctionCancelled(uint256 indexed tokenId);
     
-    constructor(address _pokemonContract) {
+    constructor(address _pokemonContract) Ownable(msg.sender){
         pokemonContract = IERC721(_pokemonContract);
     }
     
@@ -65,6 +68,14 @@ contract PokemonMarketplace is ReentrancyGuard {
     modifier auctionExists(uint256 tokenId) {
         require(auctions[tokenId].isActive, "No active auction for this card");
         _;
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     // Helper function to add token to listed array
@@ -110,7 +121,7 @@ contract PokemonMarketplace is ReentrancyGuard {
     }
     
     // Fixed Price Listing Functions
-    function listCard(uint256 tokenId, uint256 price) external onlyCardOwner(tokenId) {
+    function listCard(uint256 tokenId, uint256 price) external onlyCardOwner(tokenId) whenNotPaused{
         require(!listings[tokenId].isActive, "Card already listed");
         require(!auctions[tokenId].isActive, "Card is in auction");
         require(price > 0, "Price must be greater than 0");
@@ -127,13 +138,13 @@ contract PokemonMarketplace is ReentrancyGuard {
         emit CardListed(tokenId, msg.sender, price);
     }
     
-    function cancelListing(uint256 tokenId) external onlyCardOwner(tokenId) listingExists(tokenId) {
+    function cancelListing(uint256 tokenId) external onlyCardOwner(tokenId) listingExists(tokenId) whenNotPaused{
         delete listings[tokenId];
         _removeFromListedTokens(tokenId);
         emit CardUnlisted(tokenId);
     }
     
-    function buyCard(uint256 tokenId) external payable notCurrentOwner(tokenId) listingExists(tokenId) nonReentrant {
+    function buyCard(uint256 tokenId) external payable notCurrentOwner(tokenId) listingExists(tokenId) nonReentrant whenNotPaused{
         Listing memory listing = listings[tokenId];
         require(msg.value == listing.price, "Incorrect payment amount");
         
@@ -154,7 +165,7 @@ contract PokemonMarketplace is ReentrancyGuard {
         uint256 tokenId,
         uint256 startingPrice,
         uint256 duration
-    ) external onlyCardOwner(tokenId) {
+    ) external onlyCardOwner(tokenId) whenNotPaused{
         require(!listings[tokenId].isActive, "Card is listed for sale");
         require(!auctions[tokenId].isActive, "Auction already exists");
         require(startingPrice > 0, "Starting price must be greater than 0");
@@ -175,7 +186,7 @@ contract PokemonMarketplace is ReentrancyGuard {
         emit AuctionStarted(tokenId, msg.sender, startingPrice, block.timestamp + duration);
     }
     
-    function placeBid(uint256 tokenId) external payable notCurrentOwner(tokenId) auctionExists(tokenId) nonReentrant {
+    function placeBid(uint256 tokenId) external payable notCurrentOwner(tokenId) auctionExists(tokenId) nonReentrant whenNotPaused{
         Auction storage auction = auctions[tokenId];
         require(block.timestamp < auction.endTime, "Auction ended");
         require(msg.value > auction.highestBid, "Bid too low");
@@ -192,7 +203,7 @@ contract PokemonMarketplace is ReentrancyGuard {
         emit AuctionBid(tokenId, msg.sender, msg.value);
     }
     
-    function finalizeAuction(uint256 tokenId) external auctionExists(tokenId) nonReentrant {
+    function finalizeAuction(uint256 tokenId) external auctionExists(tokenId) nonReentrant whenNotPaused{
         Auction storage auction = auctions[tokenId];
         require(block.timestamp >= auction.endTime, "Auction not ended yet");
         // Allow only the seller or the highest bidder (if one exists) to finalize
@@ -220,7 +231,7 @@ contract PokemonMarketplace is ReentrancyGuard {
         }
     }
     
-    function cancelAuction(uint256 tokenId) external onlyCardOwner(tokenId) auctionExists(tokenId) {
+    function cancelAuction(uint256 tokenId) external onlyCardOwner(tokenId) auctionExists(tokenId) whenNotPaused{
         Auction storage auction = auctions[tokenId];
         require(auction.highestBidder == address(0), "Cannot cancel auction with bids");
         
