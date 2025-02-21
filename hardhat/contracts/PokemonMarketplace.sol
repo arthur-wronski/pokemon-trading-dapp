@@ -192,9 +192,14 @@ contract PokemonMarketplace is ReentrancyGuard {
         emit AuctionBid(tokenId, msg.sender, msg.value);
     }
     
-    function finalizeAuction(uint256 tokenId) external auctionExists(tokenId) onlyCardOwner(tokenId) nonReentrant {
+    function finalizeAuction(uint256 tokenId) external auctionExists(tokenId) nonReentrant {
         Auction storage auction = auctions[tokenId];
         require(block.timestamp >= auction.endTime, "Auction not ended yet");
+        // Allow only the seller or the highest bidder (if one exists) to finalize
+        require(
+            msg.sender == auction.seller || (auction.highestBidder != address(0) && msg.sender == auction.highestBidder),
+            "Not authorized to finalize"
+        );
         
         address winner = auction.highestBidder;
         uint256 winningBid = auction.highestBid;
